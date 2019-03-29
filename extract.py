@@ -14,7 +14,7 @@ import imageio
 import numpy as np
 import numpy.lib.stride_tricks
 
-import astropy.io.fits as fits
+import fitsio
 
 import matplotlib
 matplotlib.use('AGG')
@@ -28,13 +28,14 @@ def extract(idx, name, offsets, outdir, downsampling=128, n1=2046, n2=4094, clip
     nx, ny = int(np.ceil(width / downsampling)), int(np.ceil(height / downsampling))
     alldata = np.zeros((ny, nx), dtype=np.float32)
     allivar = np.zeros_like(alldata)
-    hdus1 = fits.open(name, memmap=True)
-    hdus2 = fits.open(name.replace('ooi', 'oow'), memmap=True)
+
+    hdus1 = fitsio.FITS(name)
+    hdus2 = fitsio.FITS(name.replace('ooi', 'oow'))
     for name, (x0, y0) in offsets.items():
         if name not in hdus1:
             continue
-        data = hdus1[name].data[::-1, ::-1].T
-        ivar = np.clip(hdus2[name].data[::-1, ::-1].T, a_min=0., a_max=None)
+        data = hdus1[name].read()[::-1, ::-1].T
+        ivar = np.clip(hdus2[name].read()[::-1, ::-1].T, a_min=0., a_max=None)
         assert data.shape == (n1, n2) and ivar.shape == (n1, n2)
         # Pad this chip so it is aligned with our downsampling grid.
         xlo, ylo = x0 // downsampling, y0 // downsampling
@@ -50,8 +51,6 @@ def extract(idx, name, offsets, outdir, downsampling=128, n1=2046, n2=4094, clip
         allivar[ydst, xdst] += blocks.sum(axis=(2, 3))
         padded[ysrc, xsrc] *= data
         alldata[ydst, xdst] += blocks.sum(axis=(2, 3))
-        del data
-        del ivar
     hdus1.close()
     hdus2.close()
     nonzero = allivar > 0
