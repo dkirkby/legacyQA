@@ -2,8 +2,8 @@
 
 #SBATCH --partition=debug
 #SBATCH --account=desi
-#SBATCH --nodes=1
-#SBATCH --time=00:10:00
+#SBATCH --nodes=10
+#SBATCH --time=00:20:00
 #SBATCH --job-name=dr8
 
 echo Starting slurm script at `date`
@@ -12,8 +12,8 @@ echo Starting slurm script at `date`
 export TMPDIR=/dev/shm
 
 # This must be the same as --nodes above
-# 125 x 24 = 3000
-nodes=1
+# 10 x 24 = 240
+nodes=10
 
 # Edison nodes have 24 cores, but hyperthreading enabled.
 cpu_per_core=2
