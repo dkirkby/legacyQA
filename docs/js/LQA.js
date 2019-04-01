@@ -36,6 +36,7 @@ function initscan(toscan) {
             var tag = list[i].slice(6);
             div.append($('<span>').addClass('qa-button topleft').attr('id', 'Q_' + tag).html('?'));
             div.append($('<span>').addClass('qa-button btmleft').attr('id', 'X_' + tag).html('&cross;'));
+            div.append($('<span>').addClass('details-button').attr('id', tag));
             parent.append(div);
         }
         // Images are loaded into hidden elements, so make them visible when their
@@ -56,9 +57,25 @@ function initscan(toscan) {
             $(this).addClass('selected');
             // Deselect the other button.
             other = (tag[0] == 'Q') ? 'X' : 'Q';
-            console.log('other: #' + other + tag.slice(1));
             $('#' + other + tag.slice(1)).removeClass('selected');
         }
         console.log('click', $(this).text(), tag, selected);
+    });
+    // Add dialog support for old browsers.
+    var dialog = document.querySelector('dialog'); //$('#details');
+    if (!dialog.showModal) {
+        console.log('polyfilling dialog...');
+        dialogPolyfill.registerDialog(dialog);
+    }
+    // Add handler for details buttons.
+    $('.details-button').click(function() {
+        var tag = $(this).attr('id');
+        $('#details-title').text(tag);
+        var src = $(this).siblings('img').attr('src');
+        $('#details-content img').attr('src', src);
+        dialog.showModal();
+    });
+    $('.close').click(function() {
+        dialog.close();
     });
 }

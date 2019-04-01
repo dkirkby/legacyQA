@@ -11,9 +11,27 @@
     width: 112px;
     height: 96px;
 }
+#details-title {
+    width: 100%;
+    text-align: center;
+}
+#details-content {
+    width: 224px;
+    height: 192px;
+    border: 2px solid black;
+}
+.details-button {
+    position: absolute;
+    /* background: #fffa; uncomment to see clickable region */
+    cursor: pointer;
+    width: 32px;
+    height: 32px;
+    top: 32px;
+    left: 40px;
+}
 .qa-button {
     position: absolute;
-    background: #fffa;
+    /* background: #fffa; uncomment to see clickable region */
     color: gray;
     font-weight: 700;
     font-size: 20px;
