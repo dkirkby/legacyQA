@@ -80,4 +80,9 @@ function initscan(toscan) {
     $('.close').click(function() {
         dialog.close();
     });
+    // Add handler for the "Image Link" button on the details dialog.
+    $('#img-link').click(function() {
+        var img = $(this).parent().siblings('.mdl-dialog__content').children('img').attr('src');
+        window.open(img, '_blank');
+    });
 }
