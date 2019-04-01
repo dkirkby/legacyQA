@@ -5,6 +5,8 @@ $(document).ready(function() {
 var sessionData = null;
 
 function initialize() {
+    // Load the help tab content.
+    $('#help').load('README.md');
     // Get the user name.
     console.log('initialize');
     sessionData = localStorage.getItem('LegacyQA.session');
