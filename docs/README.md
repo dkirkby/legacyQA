@@ -5,8 +5,8 @@
     classify the whole data set.
 </p>
 <p>
-    To get started, click on a tab above to display thumbnails of downsampled DECaLs exposures (using the community pipeline output) for
-    different bands. The code used to build each thumbnail is
+    To get started, click on a tab above to display thumbnails of (inverse-variance weighted) downsampled DECaLs exposures (using the 
+    community pipeline output) for different bands. The code used to build each thumbnail is
     <a href="https://github.com/dkirkby/legacyQA/blob/master/extract.py">here</a>.
 </p>
 <p>
