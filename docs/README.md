@@ -16,7 +16,9 @@
 </p>
 <p>
     Click on the center of any thumbnail to
-    open a dialog where the focal plane is displayed 2x larger, together with a label identifying the exposure.
+    open a dialog where the focal plane is displayed 2x larger, together with a label identifying the exposure with the format
+    JOBNUM-CPNAME-EXPNUM.  Use the LINK button to open this image directly (e.g., to grab its URL for sharing).  Click within this image 
+    to view the corresponding chip image with the DR7 ccd viewer. Click the CLOSE button (or hit SPACE or ESC) to close this dialog.
 </p>
 <p>
     To report a bug or suggest a feature, review the <a href="https://github.com/dkirkby/legacyQA/issues">existing issues</a>, and
