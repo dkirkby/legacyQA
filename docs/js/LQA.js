@@ -50,6 +50,9 @@ function initscan(toscan) {
     // Add handler for QA buttons.
     $('.qa-button').click(function() {
         var tag = $(this).attr('id');
+        // Do nothing if this image has not been loaded yet.
+        var src = $(this).siblings('img').attr('src');
+        if(src == '') return;
         var selected = $(this).hasClass('selected');
         if(selected) {
             $(this).removeClass('selected');
@@ -73,7 +76,9 @@ function initscan(toscan) {
     $('.details-button').click(function() {
         var tag = $(this).attr('id');
         $('#details-title').text(tag);
+        // Do nothing if this image has not been loaded yet.
         var src = $(this).siblings('img').attr('src');
+        if(src == '') return;
         $('#details-content img').attr('src', src);
         dialog.showModal();
     });
