@@ -34,7 +34,7 @@ function initscan(toscan) {
         var list = toscan[band];
         for(var i = 0; i < list.length; i++) {
             var div = $('<div>').addClass('thumb');
-            div.append($('<img>', {src: IMGSRC + list[i] + '.jpg'}));
+            div.append($('<img>', {'data-src': IMGSRC + list[i] + '.jpg', src: "", class: 'lazy'}));
             var tag = list[i].slice(6);
             div.append($('<span>').addClass('qa-button topleft').attr('id', 'Q_' + tag).html('?'));
             div.append($('<span>').addClass('qa-button btmleft').attr('id', 'X_' + tag).html('&cross;'));
@@ -50,6 +50,9 @@ function initscan(toscan) {
     // Add handler for QA buttons.
     $('.qa-button').click(function() {
         var tag = $(this).attr('id');
+        // Do nothing if this image has not been loaded yet.
+        var src = $(this).siblings('img').attr('src');
+        if(src == '') return;
         var selected = $(this).hasClass('selected');
         if(selected) {
             $(this).removeClass('selected');
@@ -73,7 +76,9 @@ function initscan(toscan) {
     $('.details-button').click(function() {
         var tag = $(this).attr('id');
         $('#details-title').text(tag);
+        // Do nothing if this image has not been loaded yet.
         var src = $(this).siblings('img').attr('src');
+        if(src == '') return;
         $('#details-content img').attr('src', src);
         dialog.showModal();
     });
@@ -85,4 +90,6 @@ function initscan(toscan) {
         var img = $(this).parent().siblings('.mdl-dialog__content').children('img').attr('src');
         window.open(img, '_blank');
     });
+    // Enable lazy image loading.
+    $('img.lazy').Lazy({scrollDirection: 'vertical'});
 }
