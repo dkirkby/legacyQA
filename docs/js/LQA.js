@@ -34,7 +34,7 @@ function initscan(toscan) {
         var list = toscan[band];
         for(var i = 0; i < list.length; i++) {
             var div = $('<div>').addClass('thumb');
-            div.append($('<img>', {src: IMGSRC + list[i] + '.jpg'}));
+            div.append($('<img>', {'data-src': IMGSRC + list[i] + '.jpg', 'src': ""}));
             var tag = list[i].slice(6);
             div.append($('<span>').addClass('qa-button topleft').attr('id', 'Q_' + tag).html('?'));
             div.append($('<span>').addClass('qa-button btmleft').attr('id', 'X_' + tag).html('&cross;'));
