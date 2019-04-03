@@ -4,6 +4,8 @@ $(document).ready(function() {
 
 var sessionData = null;
 
+var bbox = {"S1": [192, 224, 96, 112], "N1": [192, 224, 80, 96], "S2": [160, 192, 96, 112], "N2": [160, 192, 80, 96], "S3": [128, 160, 96, 112], "N3": [128, 160, 80, 96], "S4": [96, 128, 96, 112], "N4": [96, 128, 80, 96], "S5": [64, 96, 96, 112], "N5": [64, 96, 80, 96], "S6": [32, 64, 96, 112], "N6": [32, 64, 80, 96], "S7": [0, 32, 96, 112], "N7": [0, 32, 80, 96], "S8": [176, 208, 112, 128], "S14": [176, 208, 128, 144], "N8": [176, 208, 64, 80], "N14": [176, 208, 48, 64], "S9": [144, 176, 112, 128], "S15": [144, 176, 128, 144], "N9": [144, 176, 64, 80], "N15": [144, 176, 48, 64], "S10": [112, 144, 112, 128], "S16": [112, 144, 128, 144], "N10": [112, 144, 64, 80], "N16": [112, 144, 48, 64], "S11": [80, 112, 112, 128], "S17": [80, 112, 128, 144], "N11": [80, 112, 64, 80], "N17": [80, 112, 48, 64], "S12": [48, 80, 112, 128], "S18": [48, 80, 128, 144], "N12": [48, 80, 64, 80], "N18": [48, 80, 48, 64], "S13": [16, 48, 112, 128], "S19": [16, 48, 128, 144], "N13": [16, 48, 64, 80], "N19": [16, 48, 48, 64], "S20": [160, 192, 144, 160], "N20": [160, 192, 32, 48], "S21": [128, 160, 144, 160], "N21": [128, 160, 32, 48], "S22": [96, 128, 144, 160], "N22": [96, 128, 32, 48], "S23": [64, 96, 144, 160], "N23": [64, 96, 32, 48], "S24": [32, 64, 144, 160], "N24": [32, 64, 32, 48], "S25": [144, 176, 160, 176], "N25": [144, 176, 16, 32], "S26": [112, 144, 160, 176], "N26": [112, 144, 16, 32], "S27": [80, 112, 160, 176], "N27": [80, 112, 16, 32], "S28": [48, 80, 160, 176], "N28": [48, 80, 16, 32], "S29": [128, 160, 176, 192], "N29": [128, 160, 0, 16], "S30": [96, 128, 176, 192], "N30": [96, 128, 0, 16], "S31": [64, 96, 176, 192], "N31": [64, 96, 0, 16]};
+
 function initialize() {
     // Load the help tab content.
     $('#help').load('README.md');
@@ -82,13 +84,38 @@ function initscan(toscan) {
         $('#details-content img').attr('src', src);
         dialog.showModal();
     });
+    // Add hanlder for the "Close" button on the details page.
     $('.close').click(function() {
         dialog.close();
     });
-    // Add handler for the "Image Link" button on the details dialog.
+    // Add handler for the "Link" button on the details dialog.
     $('#img-link').click(function() {
         var img = $(this).parent().siblings('.mdl-dialog__content').children('img').attr('src');
         window.open(img, '_blank');
+    });
+    // Add handler for mouse clicks over the details image.
+    $('#details img').click(function(e) {
+        var offset = $(this).offset();
+        var x = e.pageX - offset.left;
+        var y = 192 - (e.pageY - offset.top);
+        console.log('details click', offset, x, y);
+        // Locate the chip corresponding to this (x,y).
+        var chip = null;
+        for(var key in bbox) {
+            edges = bbox[key]
+            if((x >= edges[0]) && (x < edges[1]) && (y >= edges[2]) && (y < edges[3])) {
+                chip = key;
+                break;
+            }
+        }
+        if(chip != null) {
+            var expnum = 349199;
+            var band = 'g';
+            var url = 'http://legacysurvey.org/viewer/ccd/decals-dr7/decam-' +
+                expnum + '-' + chip + '-' + band;
+            console.log('Selected chip', chip, 'opens', url);
+            window.open(url, '_blank');
+        }
     });
     // Enable lazy image loading.
     $('img.lazy').Lazy({scrollDirection: 'vertical'});
