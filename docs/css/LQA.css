@@ -20,6 +20,7 @@
     width: 224px;
     height: 192px;
     border: 2px solid black;
+    cursor: pointer;
 }
 .details-button {
     position: absolute;

@@ -76,12 +76,19 @@ function initscan(toscan) {
     }
     // Add handler for details buttons.
     $('.details-button').click(function() {
+        // Lookup this image's tag of the form <JOBNUM>-<NAME>-<EXPNUM>.
         var tag = $(this).attr('id');
         $('#details-title').text(tag);
+        // Decode the image exposure number and band.
+        var fields = tag.split('-');
+        var expnum = parseInt(fields[2], 10);
+        fields = fields[1].split('_');
+        var band = fields[fields.length - 2];
+        console.log('Opening details view for expnum', expnum, 'band', band);
         // Do nothing if this image has not been loaded yet.
         var src = $(this).siblings('img').attr('src');
         if(src == '') return;
-        $('#details-content img').attr('src', src);
+        $('#details-content img').attr('src', src).attr('data-expnum', expnum).attr('data-band', band);
         dialog.showModal();
     });
     // Add hanlder for the "Close" button on the details page.
@@ -98,7 +105,6 @@ function initscan(toscan) {
         var offset = $(this).offset();
         var x = e.pageX - offset.left;
         var y = 192 - (e.pageY - offset.top);
-        console.log('details click', offset, x, y);
         // Locate the chip corresponding to this (x,y).
         var chip = null;
         for(var key in bbox) {
@@ -109,8 +115,8 @@ function initscan(toscan) {
             }
         }
         if(chip != null) {
-            var expnum = 349199;
-            var band = 'g';
+            var expnum = $(this).attr('data-expnum');
+            var band = $(this).attr('data-band');
             var url = 'http://legacysurvey.org/viewer/ccd/decals-dr7/decam-' +
                 expnum + '-' + chip + '-' + band;
             console.log('Selected chip', chip, 'opens', url);
