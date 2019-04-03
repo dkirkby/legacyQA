@@ -20,16 +20,23 @@ import matplotlib
 matplotlib.use('AGG')
 import matplotlib.pyplot as plt
 
-def extract(idx, name, offsets, outdir, downsampling=128, n1=2046, n2=4094, clip_percent=5):
+def extract(idx, tag, offsets, outdir, downsampling=128, n1=2046, n2=4094, clip_percent=2.5):
+    expnum, name = tag.split()
+    expnum = int(expnum)
     basename = os.path.splitext(os.path.splitext(os.path.basename(name))[0])[0]
-    outname = f'{outdir}/{idx:06d}_{basename}'
+    outname = f'{outdir}/{idx:06d}-{basename}-{expnum:06d}'
     print(f'[{idx}] {outname}')
     width, height = 7 * n2, 12 * n1
     nx, ny = int(np.ceil(width / downsampling)), int(np.ceil(height / downsampling))
     alldata = np.zeros((ny, nx), dtype=np.float32)
     allivar = np.zeros_like(alldata)
 
+    ROOT = Path('/global/project/projectdirs/cosmo/work/legacysurvey/dr8/images/decam')
+    name = str(ROOT / name)
     hdus1 = fitsio.FITS(name)
+    hdr = hdus1[0].read_header()
+    if hdr['EXPNUM'] != expnum:
+        print('EXPNUM mismatch:'. hdr['EXPNUM'], expnum)
     hdus2 = fitsio.FITS(name.replace('ooi', 'oow'))
     for name, (x0, y0) in offsets.items():
         if name not in hdus1:
@@ -59,7 +66,8 @@ def extract(idx, name, offsets, outdir, downsampling=128, n1=2046, n2=4094, clip
     np.save(outname + '.npy', np.vstack((alldata.reshape(-1), allivar.reshape(-1))))
     # Also save a JPG image using histogram equalization.
     zero = (alldata == 0)
-    eq = equalize(alldata, clip_percent=clip_percent)
+    eq = np.zeros_like(alldata)
+    eq[~zero] = equalize(alldata[~zero], clip_percent=clip_percent)
     # Convert to RGB using viridis_r, which mostly uses the GB channels.
     cmap = plt.get_cmap('viridis_r')
     rgb = cmap(eq)[:,:,:3]
@@ -134,17 +142,18 @@ def get_offsets(n1=2046, n2=4094):
     return offsets
 
 def main(myid, stride=10):
-    ROOT = Path('/global/project/projectdirs/cosmo/work/legacysurvey/dr8b')
-    assert ROOT.exists
-    with open(ROOT / 'image-lists/image-list-decam-dr8.txt') as f:
-        files = [line.strip() for line in f.readlines()]
+    # Open the list of exposures to extract.
+    with open('todo.txt') as f:
+        todo = [line.strip() for line in f.readlines()]
     print(f'Starting job {myid} with stride {stride}.')
     offsets = get_offsets()
+    # Prepare the output path for this job.
     path = f'{(myid//10000):02d}/{(myid//100)%100:02d}'
-    OUTDIR = Path(os.getenv('SCRATCH')) / 'badexp' / path
+    OUTDIR = Path(os.getenv('SCRATCH')) / 'LQA' / path
     os.makedirs(OUTDIR, exist_ok=True)
-    for i, filename in enumerate(files[stride * myid : stride * (myid + 1)]):
-        extract(stride * myid + i, str(ROOT / 'images' / filename), offsets, str(OUTDIR))
+    # Extract each exposure.
+    for i, tag in enumerate(todo[stride * myid : stride * (myid + 1)]):
+        extract(stride * myid + i, tag, offsets, str(OUTDIR))
 
 if __name__ == '__main__':
     # Silence RuntimeWarning from np.sqrt bug.
@@ -154,5 +163,5 @@ if __name__ == '__main__':
     else:
         from mpi4py import MPI
         # Add an offset here to skip a completed block of jobs.
-        myid = MPI.COMM_WORLD.rank + 562
+        myid = MPI.COMM_WORLD.rank + 1
     main(myid)
