@@ -10,26 +10,33 @@ from shutil import copyfile
 import numpy as np
 
 
-def sync():
-    # Load the list of files to process.
-    with open('image-list-decam-dr8.txt') as f:
-        files = [line.strip() for line in f.readlines()]
-    print(f'Synching {len(files)} files...')
+def sync(nscan=500):
+    # Load the list of all files to process.
+    jobnums, expnums, names = [], [], []
+    with open('all.txt') as f:
+        for line in f.readlines():
+            jobnum, expnum, name = line.split()
+            jobnums.append(int(jobnum))
+            expnums.append(int(expnum))
+            names.append(name)
+    jobnums = np.array(jobnums)
+    expnums = np.array(expnums)
+    njobs = len(jobnums)
+    print(f'Synching {njobs} jobs...')
     # Define source and destination paths.
-    src = Path(os.getenv('SCRATCH')) / 'badexp'
-    dst = Path(os.getenv('DESI_WWW')) / 'users' / 'dkirkby' / 'LQA'
+    src = Path(os.getenv('SCRATCH')) / 'LQA'
+    dst = Path(os.getenv('DESI_WWW')) / 'users' / 'dkirkby' / 'LQA2'
     # Initialize progress lists.
-    todo = np.ones(len(files), bool)
-    nscan = 100
+    todo = np.ones(njobs, bool)
     toscan = {'g': [], 'r': [], 'z': []}
     bandpat = re.compile('_([grz])_')
     # Loop over source directories.
-    for i in range(len(files) // 10000 + 1):
+    for i in range(njobs // 10000 + 1):
         path0 = Path(f'{i:02d}')
         if not (src / path0).is_dir():
             continue
         if not (dst / path0).is_dir():
-            (dst / path).mkdir()
+            (dst / path0).mkdir()
         for j in range(100):
             path1 = path0 / f'{j:02d}'
             if not (src / path1).is_dir():
@@ -39,13 +46,17 @@ def sync():
             ncopy = 0
             missing = np.ones(1000, bool)
             for jpg in (src / path1).glob('*.jpg'):
-                name = jpg.name
-                idx = name.index('_')
-                k = int(name[:idx])
+                jobnum, name, expnum = jpg.stem.split('-')
+                jobnum = int(jobnum)
+                expnum = int(expnum)
+                # Lookup the corresponding job in the master list.
+                assert jobnums[jobnum] == jobnum
+                if expnum != expnums[jobnum]:
+                    raise RuntimeError(f'EXPNUM msimatch: {expnum}, {expnums[jobnum]}.')
                 # Check that this is the expected filename.
-                expected = Path(files[k]).name
+                expected = Path(names[jobnum]).name
                 assert expected.endswith('.fits.fz')
-                if name[idx+1:-4] != expected[:-8]:
+                if name != expected[:-8]:
                     raise RuntimeError(f'Filename mismatch: "{name}", "{expected}".')
                 # Extract the band (g,r,z) from the name.
                 band = bandpat.search(name)
@@ -53,29 +64,31 @@ def sync():
                     raise RuntimeError(f'No band specified in "{name}".')
                 band = band.group(1)
                 # Record that we found this file.
-                missing[k % 1000] = False
-                todo[k] = False
+                missing[jobnum % 1000] = False
+                todo[jobnum] = False
                 if len(toscan[band]) < nscan:
                     toscan[band].append(str(path1 / name[:-4]))
                     # Copy the file if necessary.
                     if not (dst / path1 / name).exists():
-                        copyfile(src / path1 / name, dst / path1 / name)
+                        ##copyfile(src / path1 / name, dst / path1 / name)
                         ncopy += 1
             missing = np.where(missing)[0]
             print(f'{path1}: copied {ncopy} / {1000 - len(missing)}, missing {len(missing)}.')
     # Write out toscan list.
     for band in 'grz':
         print(f'Found {len(toscan[band])} {band}-band images to scan.')
+    '''
     with open(f'js/toscan.js', 'w') as f:
-        f.write('toscan=')
+        f.write('initscan(')
         json.dump(toscan, f, separators=(',\n', ':'))
-        f.write('\n')
+        f.write(');\n')
+    '''
     # Write out todo list.
     todo = np.where(todo)[0]
-    print(f'Still have {len(todo)} / {len(files)} to process.')
+    print(f'Still have {len(todo)} / {njobs} to process.')
     with open('todo.txt', 'w') as f:
         for k in todo:
-            print(f'{k} {files[k]}', file=f)
+            print(f'{jobnums[k]:06d} {expnums[k]:06d} {names[k]}', file=f)
 
 
 if __name__ == '__main__':

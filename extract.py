@@ -20,17 +20,24 @@ import matplotlib
 matplotlib.use('AGG')
 import matplotlib.pyplot as plt
 
-def extract(idx, tag, offsets, outdir, downsampling=128, n1=2046, n2=4094, clip_percent=2.5):
-    expnum, name = tag.split()
+def extract(idx, jobspec, offsets, downsampling=128, n1=2046, n2=4094, clip_percent=2.5):
+    # Parse the job spec.
+    jobnum, expnum, name = jobspec.split()
+    jobnum = int(jobnum)
     expnum = int(expnum)
-    basename = os.path.splitext(os.path.splitext(os.path.basename(name))[0])[0]
-    outname = f'{outdir}/{idx:06d}-{basename}-{expnum:06d}'
+    # Prepare the output path for this job.
+    path = f'{(jobnum//10000):02d}/{(jobnum//100)%100:02d}'
+    OUTDIR = Path(os.getenv('SCRATCH')) / 'LQA' / path
+    os.makedirs(OUTDIR, exist_ok=True)
+    assert name.endswith('.fits.fz')
+    basename = Path(name).name[:-8]
+    outname = str(OUTDIR / f'{jobnum:06d}-{basename}-{expnum:06d}')
     print(f'[{idx}] {outname}')
+    # Process the input FITS file for this exposure.
     width, height = 7 * n2, 12 * n1
     nx, ny = int(np.ceil(width / downsampling)), int(np.ceil(height / downsampling))
     alldata = np.zeros((ny, nx), dtype=np.float32)
     allivar = np.zeros_like(alldata)
-
     ROOT = Path('/global/project/projectdirs/cosmo/work/legacysurvey/dr8/images/decam')
     name = str(ROOT / name)
     hdus1 = fitsio.FITS(name)
@@ -142,18 +149,14 @@ def get_offsets(n1=2046, n2=4094):
     return offsets
 
 def main(myid, stride=10):
-    # Open the list of exposures to extract.
+    # Open the list of remaining jobs to run.
     with open('todo.txt') as f:
         todo = [line.strip() for line in f.readlines()]
     print(f'Starting job {myid} with stride {stride}.')
     offsets = get_offsets()
-    # Prepare the output path for this job.
-    path = f'{(myid//10000):02d}/{(myid//100)%100:02d}'
-    OUTDIR = Path(os.getenv('SCRATCH')) / 'LQA' / path
-    os.makedirs(OUTDIR, exist_ok=True)
-    # Extract each exposure.
-    for i, tag in enumerate(todo[stride * myid : stride * (myid + 1)]):
-        extract(stride * myid + i, tag, offsets, str(OUTDIR))
+    # Extract this job's exposures.
+    for i, jobspec in enumerate(todo[stride * myid : stride * (myid + 1)]):
+        extract(stride * myid + i, jobspec, offsets)
 
 if __name__ == '__main__':
     # Silence RuntimeWarning from np.sqrt bug.
@@ -163,5 +166,5 @@ if __name__ == '__main__':
     else:
         from mpi4py import MPI
         # Add an offset here to skip a completed block of jobs.
-        myid = MPI.COMM_WORLD.rank + 1
+        myid = MPI.COMM_WORLD.rank
     main(myid)
